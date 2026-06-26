@@ -8,6 +8,7 @@ import { MyAssessments } from "./components/student/MyAssessments";
 import { StudentResults } from "./components/student/StudentResults";
 import { ProfessorLayout } from "./components/professor/ProfessorLayout";
 import { ProfessorDashboard } from "./components/professor/ProfessorDashboard";
+import { Assignments } from "./components/professor/Assignments";
 import { AssignmentDetail } from "./components/professor/AssignmentDetail";
 import { ProfessorStudentResults } from "./components/professor/ProfessorStudentResults";
 import { NewAssignment } from "./components/professor/NewAssignment";
@@ -30,6 +31,7 @@ export const router = createBrowserRouter([
     Component: ProfessorLayout,
     children: [
       { index: true, Component: ProfessorDashboard },
+      { path: "assignments", Component: Assignments },
       { path: "assignments/:id", Component: AssignmentDetail },
       { path: "assignments/:assignmentId/student/:studentId", Component: ProfessorStudentResults },
       { path: "new-assignment", Component: NewAssignment },

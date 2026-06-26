@@ -26,7 +26,7 @@ export function RoleSelect() {
               <rect width="26" height="26" rx="7" fill="#2A2D31" />
               <path d="M13 8L18 11V17L13 20L8 17V11L13 8Z" fill="white" />
             </svg>
-            <span style={{ fontWeight: 700, color: "#2A2D31", fontSize: "1rem" }}>IntellectualAI</span>
+            <span style={{ fontWeight: 700, color: "#2A2D31", fontSize: "1rem" }}>IntellectusAI</span>
           </div>
           <div className="flex flex-col items-center gap-1.5">
             <h1
@@ -39,7 +39,7 @@ export function RoleSelect() {
                 textAlign: "center",
               }}
             >
-              How will you be using IntellectualAI?
+              How will you be using IntellectusAI?
             </h1>
             <p style={{ color: "#717182", fontSize: "0.9375rem" }}>
               Choose your role to get started.

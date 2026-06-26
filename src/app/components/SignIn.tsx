@@ -16,7 +16,7 @@ export function SignIn() {
         <div className="flex items-center gap-2.5">
           <LogoMark color="white" />
           <span style={{ color: "white", fontWeight: 700, fontSize: "1rem", letterSpacing: "-0.01em" }}>
-            IntellectualAI
+            IntellectusAI
           </span>
         </div>
 
@@ -63,7 +63,7 @@ export function SignIn() {
           <div className="flex lg:hidden items-center gap-2.5">
             <LogoMark color="#2A2D31" />
             <span style={{ color: "#2A2D31", fontWeight: 700, fontSize: "1rem" }}>
-              IntellectualAI
+              IntellectusAI
             </span>
           </div>
 

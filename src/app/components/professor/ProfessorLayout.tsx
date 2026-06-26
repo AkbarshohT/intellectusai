@@ -22,7 +22,7 @@ export function ProfessorLayout() {
               <path d="M13 8L18 11V17L13 20L8 17V11L13 8Z" fill="white" />
             </svg>
             <span style={{ fontWeight: 700, color: "#2A2D31", fontSize: "0.9375rem", letterSpacing: "-0.01em" }}>
-              IntellectualAI
+              IntellectusAI
             </span>
           </button>
 

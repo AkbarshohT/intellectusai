@@ -33,6 +33,7 @@ export interface Assignment {
   id: string;
   title: string;
   course: string;
+  language: string;
   dueDate: string;
   totalStudents: number;
   submissions: StudentSubmission[];
@@ -153,6 +154,7 @@ export const professorAssignments: Assignment[] = [
     id: "p1",
     title: "Presentation: How to save the environment",
     course: "COMM 301 — Public Speaking",
+    language: "English",
     dueDate: "Jun 25, 2026",
     totalStudents: 30,
     submissions: [
@@ -420,6 +422,7 @@ export const professorAssignments: Assignment[] = [
     id: "p2",
     title: "Persuasive Speech: Technology in Education",
     course: "COMM 201 — Intro to Speech",
+    language: "Russian",
     dueDate: "Jun 28, 2026",
     totalStudents: 25,
     submissions: [
@@ -436,6 +439,7 @@ export const professorAssignments: Assignment[] = [
     id: "p3",
     title: "Informative Presentation: Climate Science",
     course: "ENV 101 — Environmental Studies",
+    language: "Uzbek",
     dueDate: "Jun 30, 2026",
     totalStudents: 28,
     submissions: [],

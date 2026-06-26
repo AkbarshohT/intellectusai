@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from "react-router";
 import { ArrowLeft, Eye, Clock, AlertTriangle, TrendingDown } from "lucide-react";
-import { professorAssignments } from "../../data";
+import { useAssignments } from "../../AssignmentsContext";
 
 function StatusPill({ status }: { status: "completed" | "pending" }) {
   if (status === "completed") {
@@ -28,8 +28,9 @@ function StatusPill({ status }: { status: "completed" | "pending" }) {
 export function AssignmentDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { assignments } = useAssignments();
 
-  const assignment = professorAssignments.find((a) => a.id === id) ?? professorAssignments[0];
+  const assignment = assignments.find((a) => a.id === id) ?? assignments[0];
   const completed = assignment.submissions.filter((s) => s.status === "completed");
   const pending = assignment.submissions.filter((s) => s.status === "pending");
 

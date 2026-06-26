@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
+import { useAssignments } from "../../AssignmentsContext";
 
 export function NewAssignment() {
   const navigate = useNavigate();
+  const { addAssignment } = useAssignments();
   const [title, setTitle] = useState("");
   const [course, setCourse] = useState("");
   const [language, setLanguage] = useState("Uzbek");
@@ -15,9 +17,10 @@ export function NewAssignment() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setCreating(true);
+    addAssignment({ title, course, language, dueDate });
     setTimeout(() => {
       setDone(true);
-      setTimeout(() => navigate("/professor"), 900);
+      setTimeout(() => navigate("/professor/assignments"), 900);
     }, 1000);
   };
 
@@ -53,7 +56,7 @@ export function NewAssignment() {
           <div>
             <h2 style={{ fontWeight: 700, color: "#111827", fontSize: "1.125rem" }}>Assignment created!</h2>
             <p style={{ color: "#6B7280", fontSize: "0.875rem", marginTop: "4px" }}>
-              Redirecting to your dashboard…
+              Redirecting to your assignments…
             </p>
           </div>
         </div>
