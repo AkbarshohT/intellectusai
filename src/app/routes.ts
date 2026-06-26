@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router";
 import { SignIn } from "./components/SignIn";
 import { RoleSelect } from "./components/RoleSelect";
+import { TermsOfService, PrivacyPolicy } from "./components/LegalPage";
 import { StudentLayout } from "./components/student/StudentLayout";
 import { StudentDashboard } from "./components/student/StudentDashboard";
 import { AssessVideo } from "./components/student/AssessVideo";
@@ -16,6 +17,8 @@ import { NewAssignment } from "./components/professor/NewAssignment";
 export const router = createBrowserRouter([
   { path: "/", Component: SignIn },
   { path: "/role-select", Component: RoleSelect },
+  { path: "/terms", Component: TermsOfService },
+  { path: "/privacy", Component: PrivacyPolicy },
   {
     path: "/student",
     Component: StudentLayout,

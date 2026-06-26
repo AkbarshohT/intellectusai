@@ -8,59 +8,11 @@ export function SignIn() {
       className="min-h-screen flex"
       style={{ backgroundColor: "#F7F7F8", fontFamily: "Inter, sans-serif" }}
     >
-      {/* Left decorative panel — hidden on mobile */}
-      <div
-        className="hidden lg:flex flex-col justify-between w-[420px] shrink-0 p-10"
-        style={{ backgroundColor: "#2A2D31" }}
-      >
-        <div className="flex items-center gap-2.5">
-          <LogoMark color="white" />
-          <span style={{ color: "white", fontWeight: 700, fontSize: "1rem", letterSpacing: "-0.01em" }}>
-            IntellectusAI
-          </span>
-        </div>
-
-        <div className="flex flex-col gap-6">
-          <blockquote style={{ color: "rgba(255,255,255,0.85)", fontSize: "1.1rem", lineHeight: 1.7, fontWeight: 400 }}>
-            "I used to spend 4 hours watching every student video. Now I spot-check the ones that need attention in 20 minutes."
-          </blockquote>
-          <div className="flex items-center gap-3">
-            <div
-              className="w-9 h-9 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
-            >
-              <span style={{ color: "white", fontWeight: 700, fontSize: "0.875rem" }}>DM</span>
-            </div>
-            <div>
-              <p style={{ color: "white", fontWeight: 500, fontSize: "0.875rem" }}>Dr. Mirzo Davlatov</p>
-              <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.8rem" }}>
-                Communications Dept., TATU
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-3">
-          {[
-            { n: "12k+", label: "Speeches analyzed" },
-            { n: "~4 hrs", label: "Saved per assignment" },
-            { n: "3 langs", label: "Uzbek · Russian · English" },
-          ].map((s) => (
-            <div key={s.n} className="flex items-center gap-3">
-              <span style={{ color: "white", fontWeight: 700, fontSize: "1rem", minWidth: "56px" }}>
-                {s.n}
-              </span>
-              <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.8rem" }}>{s.label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Right: sign-in */}
+      {/* Sign-in */}
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-sm flex flex-col gap-8">
-          {/* Mobile logo */}
-          <div className="flex lg:hidden items-center gap-2.5">
+          {/* Logo */}
+          <div className="flex items-center gap-2.5">
             <LogoMark color="#2A2D31" />
             <span style={{ color: "#2A2D31", fontWeight: 700, fontSize: "1rem" }}>
               IntellectusAI
@@ -117,11 +69,19 @@ export function SignIn() {
 
           <p className="text-center" style={{ color: "#9CA3AF", fontSize: "0.78rem" }}>
             By continuing, you agree to our{" "}
-            <span className="underline cursor-pointer" style={{ color: "#2A2D31" }}>
+            <span
+              className="underline cursor-pointer"
+              style={{ color: "#2A2D31" }}
+              onClick={() => navigate("/terms")}
+            >
               Terms of Service
             </span>{" "}
             and{" "}
-            <span className="underline cursor-pointer" style={{ color: "#2A2D31" }}>
+            <span
+              className="underline cursor-pointer"
+              style={{ color: "#2A2D31" }}
+              onClick={() => navigate("/privacy")}
+            >
               Privacy Policy
             </span>
             .

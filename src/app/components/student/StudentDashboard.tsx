@@ -1,28 +1,8 @@
 import { useNavigate } from "react-router";
 import { ArrowRight, TrendingUp, BarChart2, Mic } from "lucide-react";
-import { studentAssessments } from "../../data";
 
 export function StudentDashboard() {
   const navigate = useNavigate();
-  const recent = studentAssessments.slice(0, 2);
-
-  const scoreColor = (score: number) => {
-    if (score >= 80) return "#16A34A";
-    if (score >= 60) return "#D97706";
-    return "#DC2626";
-  };
-
-  const scoreBg = (score: number) => {
-    if (score >= 80) return "#DCFCE7";
-    if (score >= 60) return "#FEF3C7";
-    return "#FEE2E2";
-  };
-
-  const ringOffset = (score: number) => {
-    const r = 14;
-    const c = 2 * Math.PI * r;
-    return c - (score / 100) * c;
-  };
 
   return (
     <div className="flex flex-col gap-8">
@@ -116,77 +96,6 @@ export function StudentDashboard() {
                 <p style={{ color: "#9CA3AF", fontSize: "0.75rem", marginTop: "1px" }}>
                   {item.desc}
                 </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Recent feedback */}
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <h2 style={{ fontWeight: 700, color: "#2A2D31", fontSize: "1rem", letterSpacing: "-0.01em" }}>
-            Recent feedback
-          </h2>
-          <button
-            onClick={() => navigate("/student/assessments")}
-            className="flex items-center gap-1 text-sm transition-colors hover:text-gray-800"
-            style={{ color: "#717182" }}
-          >
-            View all
-            <ArrowRight size={13} />
-          </button>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {recent.map((a) => (
-            <div
-              key={a.id}
-              className="bg-white rounded-xl p-5 cursor-pointer transition-all hover:shadow-md active:scale-[0.98]"
-              style={{ border: "1px solid #E5E5E8", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}
-              onClick={() => navigate(`/student/results/${a.id}`)}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                  <p
-                    className="truncate"
-                    style={{ fontWeight: 600, color: "#2A2D31", fontSize: "0.9rem" }}
-                  >
-                    {a.topic}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="px-2 py-0.5 rounded text-xs"
-                      style={{ backgroundColor: "#F0F0F2", color: "#717182", fontWeight: 500 }}
-                    >
-                      {a.language}
-                    </span>
-                    <span style={{ color: "#9CA3AF", fontSize: "0.75rem" }}>{a.submittedAt}</span>
-                  </div>
-                </div>
-
-                {/* Mini circular score */}
-                <div className="shrink-0 flex flex-col items-center gap-0.5">
-                  <svg width="36" height="36" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="14" fill={scoreBg(a.score)} stroke="#E5E5E8" strokeWidth="3" />
-                    <circle
-                      cx="18" cy="18" r="14"
-                      fill="none"
-                      stroke={scoreColor(a.score)}
-                      strokeWidth="3"
-                      strokeDasharray={2 * Math.PI * 14}
-                      strokeDashoffset={ringOffset(a.score)}
-                      strokeLinecap="round"
-                      transform="rotate(-90 18 18)"
-                    />
-                    <text x="18" y="22" textAnchor="middle" fontSize="9" fontWeight="800" fill="#2A2D31" fontFamily="Inter, sans-serif">
-                      {a.score}
-                    </text>
-                  </svg>
-                </div>
-              </div>
-              <div className="flex items-center gap-1 mt-3" style={{ color: "#2A2D31" }}>
-                <span style={{ fontSize: "0.8rem", fontWeight: 500 }}>View feedback</span>
-                <ArrowRight size={12} />
               </div>
             </div>
           ))}

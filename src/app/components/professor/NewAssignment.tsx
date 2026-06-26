@@ -115,7 +115,7 @@ export function NewAssignment() {
           </label>
           <input
             type="text"
-            placeholder="e.g. COMM 301 — Public Speaking"
+            placeholder="e.g. Public Speaking 101"
             value={course}
             onChange={(e) => setCourse(e.target.value)}
             required

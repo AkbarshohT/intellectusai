@@ -66,10 +66,6 @@ export function RoleSelect() {
             onClick={() => handleSelect("professor")}
           />
         </div>
-
-        <p style={{ color: "#9CA3AF", fontSize: "0.78rem", textAlign: "center" }}>
-          You can switch roles anytime from your profile settings.
-        </p>
       </div>
     </div>
   );
