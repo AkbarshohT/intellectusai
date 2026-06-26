@@ -1,6 +1,12 @@
 import { Outlet, NavLink, useNavigate } from "react-router";
-import { Plus, User, Menu, X } from "lucide-react";
+import { Plus, User, Menu, X, Repeat } from "lucide-react";
 import { useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 
 export function ProfessorLayout() {
   const navigate = useNavigate();
@@ -64,12 +70,22 @@ export function ProfessorLayout() {
               <Plus size={13} />
               New Assignment
             </NavLink>
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center ml-1 cursor-pointer hover:opacity-80 transition-opacity"
-              style={{ backgroundColor: "#F0F0F2" }}
-            >
-              <User size={14} style={{ color: "#717182" }} />
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center ml-1 cursor-pointer hover:opacity-80 transition-opacity outline-none"
+                  style={{ backgroundColor: "#F0F0F2" }}
+                >
+                  <User size={14} style={{ color: "#717182" }} />
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => navigate("/role-select")}>
+                  <Repeat />
+                  Switch role
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Mobile hamburger */}

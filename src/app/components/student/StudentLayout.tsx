@@ -1,6 +1,12 @@
 import { Outlet, NavLink, useNavigate, useLocation } from "react-router";
-import { Video, User, Menu, X } from "lucide-react";
+import { Video, User, Menu, X, Repeat } from "lucide-react";
 import { useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 
 export function StudentLayout() {
   const navigate = useNavigate();
@@ -66,13 +72,23 @@ export function StudentLayout() {
               <Video size={13} />
               Assess Video
             </NavLink>
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center ml-1 cursor-pointer hover:opacity-80 transition-opacity"
-              style={{ backgroundColor: "#F0F0F2" }}
-              title="Profile"
-            >
-              <User size={14} style={{ color: "#717182" }} />
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center ml-1 cursor-pointer hover:opacity-80 transition-opacity outline-none"
+                  style={{ backgroundColor: "#F0F0F2" }}
+                  title="Profile"
+                >
+                  <User size={14} style={{ color: "#717182" }} />
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => navigate("/role-select")}>
+                  <Repeat />
+                  Switch role
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Mobile: hamburger */}
