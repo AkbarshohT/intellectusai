@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
-import { Video, Upload, CheckCircle2, X } from "lucide-react";
+import { Video, Upload, CheckCircle2, X, AlertTriangle } from "lucide-react";
+import { API_BASE_URL } from "../../config";
+import { mapResponseToAssessment, type AnalyzeResponse } from "../../lib/mapAssessment";
 
 export function AssessVideo() {
   const navigate = useNavigate();
@@ -10,17 +12,151 @@ export function AssessVideo() {
   const [agreed, setAgreed] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Recording state. The live webcam preview is backed by a real MediaRecorder
+  // so the captured clip can be submitted just like an uploaded file.
+  type RecordState = "idle" | "requesting" | "recording" | "ready" | "denied";
+  const [recordState, setRecordState] = useState<RecordState>("idle");
+  const [elapsed, setElapsed] = useState(0);
+  const [recordedDuration, setRecordedDuration] = useState(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const timerRef = useRef<number | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+
+  const formatTime = (s: number) =>
+    `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+
+  const stopStream = () => {
+    if (timerRef.current !== null) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) videoRef.current.srcObject = null;
+  };
+
+  const startRecording = async () => {
+    setRecordState("requesting");
+    setError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      streamRef.current = stream;
+
+      // Capture the take so it can be submitted like an uploaded file.
+      chunksRef.current = [];
+      const recorder = new MediaRecorder(stream);
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
+      };
+      recorder.onstop = () => {
+        const type = recorder.mimeType || "video/webm";
+        const ext = type.includes("mp4") ? "mp4" : "webm";
+        const blob = new Blob(chunksRef.current, { type });
+        const file = new File([blob], `recording-${Date.now()}.${ext}`, { type });
+        setVideoFile(file);
+      };
+      recorderRef.current = recorder;
+      recorder.start();
+
+      setElapsed(0);
+      setRecordState("recording");
+      timerRef.current = window.setInterval(() => setElapsed((e) => e + 1), 1000);
+    } catch {
+      setRecordState("denied");
+    }
+  };
+
+  const stopRecording = () => {
+    setRecordedDuration(elapsed);
+    // Stop the recorder first so its onstop handler can assemble the file
+    // before the underlying tracks are torn down.
+    if (recorderRef.current && recorderRef.current.state !== "inactive") {
+      recorderRef.current.stop();
+    }
+    if (timerRef.current !== null) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) videoRef.current.srcObject = null;
+    setRecordState("ready");
+  };
+
+  // Attach the live stream once the preview <video> is mounted
+  useEffect(() => {
+    if (recordState === "recording" && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [recordState]);
+
+  // Release the camera if the component unmounts mid-recording
+  useEffect(() => stopStream, []);
 
   const handleFile = (file: File) => {
     if (file.type.startsWith("video/")) setVideoFile(file);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!agreed) return;
+    if (!videoFile) {
+      setError("Please record or upload a video before submitting.");
+      return;
+    }
+
+    stopStream();
+    setError(null);
     setAnalyzing(true);
-    setTimeout(() => navigate("/student/results/a1"), 3000);
+
+    try {
+      const form = new FormData();
+      form.append("file", videoFile);
+      form.append("topic", topic);
+      // Backend expects lowercase: "uzbek" | "russian" | "english".
+      form.append("language", language.toLowerCase());
+
+      const res = await fetch(`${API_BASE_URL}/api/analyze`, {
+        method: "POST",
+        body: form,
+      });
+
+      let data: (AnalyzeResponse & { error?: boolean; message?: string }) | null = null;
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error("The server returned an unexpected response. Please try again.");
+      }
+
+      // Handle non-200 responses and the backend's own { error: true } shape.
+      if (!res.ok || !data || (data as { error?: boolean }).error) {
+        throw new Error(
+          (data && (data as { message?: string }).message) ||
+            "Analysis failed — please try again.",
+        );
+      }
+
+      const assessment = mapResponseToAssessment(data as AnalyzeResponse, topic, language);
+      navigate("/student/results/live", { state: { assessment } });
+    } catch (err) {
+      // Surface a calm error and keep the user's topic/language/file intact.
+      setAnalyzing(false);
+      setError(
+        err instanceof Error && err.message
+          ? err.message
+          : "Analysis failed — please check your connection and try again.",
+      );
+    }
   };
 
   if (analyzing) {
@@ -180,78 +316,173 @@ export function AssessVideo() {
                 if (f) handleFile(f);
               }}
             />
-            <div
-              className="rounded-xl flex flex-col items-center justify-center gap-3 py-8 px-5 cursor-pointer transition-all"
-              style={{
-                border: `2px dashed ${dragOver ? "#2A2D31" : videoFile ? "#16A34A" : "#D1D5DB"}`,
-                backgroundColor: dragOver ? "#F7F7F8" : videoFile ? "#F0FDF4" : "#FAFAFA",
-              }}
-              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setDragOver(false);
-                const f = e.dataTransfer.files[0];
-                if (f) handleFile(f);
-              }}
-              onClick={() => fileRef.current?.click()}
-            >
-              {videoFile ? (
-                <div className="flex flex-col items-center gap-2 text-center">
+            {recordState === "recording" ? (
+              <>
+                <div
+                  className="rounded-xl overflow-hidden relative"
+                  style={{ border: "2px solid #2A2D31", backgroundColor: "#000" }}
+                >
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    muted
+                    playsInline
+                    style={{ width: "100%", height: "220px", objectFit: "cover", display: "block" }}
+                  />
                   <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: "#DCFCE7" }}
+                    className="absolute top-3 left-3 flex items-center gap-2 px-2.5 py-1 rounded-full"
+                    style={{ backgroundColor: "rgba(0,0,0,0.55)" }}
                   >
-                    <CheckCircle2 size={22} style={{ color: "#16A34A" }} />
+                    <span
+                      className="inline-block w-2 h-2 rounded-full animate-pulse"
+                      style={{ backgroundColor: "#EF4444" }}
+                    />
+                    <span style={{ color: "white", fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.02em" }}>
+                      Recording
+                    </span>
                   </div>
-                  <div>
-                    <p style={{ fontWeight: 600, color: "#16A34A", fontSize: "0.875rem" }}>
-                      {videoFile.name}
-                    </p>
-                    <p style={{ color: "#6B7280", fontSize: "0.8rem" }}>
-                      {(videoFile.size / 1024 / 1024).toFixed(1)} MB · Click to change
-                    </p>
+                  <div
+                    className="absolute top-3 right-3 px-2.5 py-1 rounded-full"
+                    style={{ backgroundColor: "rgba(0,0,0,0.55)" }}
+                  >
+                    <span style={{ color: "white", fontSize: "0.75rem", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+                      {formatTime(elapsed)}
+                    </span>
                   </div>
                 </div>
-              ) : (
-                <div className="flex flex-col items-center gap-2 text-center">
+                <button
+                  type="button"
+                  onClick={stopRecording}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl transition-all hover:opacity-90 active:scale-[0.98] mt-2"
+                  style={{ backgroundColor: "#DC2626", color: "white", fontSize: "0.8125rem", fontWeight: 600 }}
+                >
+                  <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: "white" }} />
+                  Stop Recording
+                </button>
+              </>
+            ) : (
+              <>
+                {recordState === "denied" && (
                   <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center"
-                    style={{ backgroundColor: "#F0F0F2" }}
+                    className="rounded-xl px-4 py-3 flex items-start gap-2.5 mb-2"
+                    style={{ backgroundColor: "#FEF2F2", border: "1px solid #FECACA" }}
                   >
-                    <Video size={20} style={{ color: "#9CA3AF" }} />
-                  </div>
-                  <div>
-                    <p style={{ fontWeight: 600, color: "#374151", fontSize: "0.875rem" }}>
-                      No video selected
-                    </p>
-                    <p style={{ color: "#9CA3AF", fontSize: "0.8rem" }}>
-                      Drag & drop or click to upload
+                    <AlertTriangle size={15} style={{ color: "#DC2626", flexShrink: 0, marginTop: "1px" }} />
+                    <p style={{ color: "#B91C1C", fontSize: "0.8rem", lineHeight: 1.5 }}>
+                      Camera access is needed to record. You can upload a video instead.
                     </p>
                   </div>
+                )}
+
+                {recordState === "ready" ? (
+                  <div
+                    className="rounded-xl flex flex-col items-center justify-center gap-3 py-8 px-5"
+                    style={{ border: "2px dashed #16A34A", backgroundColor: "#F0FDF4" }}
+                  >
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: "#DCFCE7" }}
+                    >
+                      <CheckCircle2 size={22} style={{ color: "#16A34A" }} />
+                    </div>
+                    <div className="text-center">
+                      <p style={{ fontWeight: 600, color: "#16A34A", fontSize: "0.875rem" }}>
+                        Recording ready
+                      </p>
+                      <p style={{ color: "#6B7280", fontSize: "0.8rem" }}>
+                        {formatTime(recordedDuration)} captured · Ready to submit
+                      </p>
+                    </div>
+                  </div>
+                ) : recordState === "requesting" ? (
+                  <div
+                    className="rounded-xl flex flex-col items-center justify-center gap-3 py-8 px-5"
+                    style={{ border: "2px dashed #D1D5DB", backgroundColor: "#FAFAFA" }}
+                  >
+                    <svg className="animate-spin" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="9" stroke="#E5E5E8" strokeWidth="3" />
+                      <path d="M12 3a9 9 0 0 1 9 9" stroke="#2A2D31" strokeWidth="3" strokeLinecap="round" />
+                    </svg>
+                    <p style={{ color: "#6B7280", fontSize: "0.8rem" }}>Requesting camera access…</p>
+                  </div>
+                ) : (
+                  <div
+                    className="rounded-xl flex flex-col items-center justify-center gap-3 py-8 px-5 cursor-pointer transition-all"
+                    style={{
+                      border: `2px dashed ${dragOver ? "#2A2D31" : videoFile ? "#16A34A" : "#D1D5DB"}`,
+                      backgroundColor: dragOver ? "#F7F7F8" : videoFile ? "#F0FDF4" : "#FAFAFA",
+                    }}
+                    onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                    onDragLeave={() => setDragOver(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setDragOver(false);
+                      const f = e.dataTransfer.files[0];
+                      if (f) handleFile(f);
+                    }}
+                    onClick={() => fileRef.current?.click()}
+                  >
+                    {videoFile ? (
+                      <div className="flex flex-col items-center gap-2 text-center">
+                        <div
+                          className="w-10 h-10 rounded-full flex items-center justify-center"
+                          style={{ backgroundColor: "#DCFCE7" }}
+                        >
+                          <CheckCircle2 size={22} style={{ color: "#16A34A" }} />
+                        </div>
+                        <div>
+                          <p style={{ fontWeight: 600, color: "#16A34A", fontSize: "0.875rem" }}>
+                            {videoFile.name}
+                          </p>
+                          <p style={{ color: "#6B7280", fontSize: "0.8rem" }}>
+                            {(videoFile.size / 1024 / 1024).toFixed(1)} MB · Click to change
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-2 text-center">
+                        <div
+                          className="w-10 h-10 rounded-xl flex items-center justify-center"
+                          style={{ backgroundColor: "#F0F0F2" }}
+                        >
+                          <Video size={20} style={{ color: "#9CA3AF" }} />
+                        </div>
+                        <div>
+                          <p style={{ fontWeight: 600, color: "#374151", fontSize: "0.875rem" }}>
+                            No video selected
+                          </p>
+                          <p style={{ color: "#9CA3AF", fontSize: "0.8rem" }}>
+                            Drag & drop or click to upload
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  <button
+                    type="button"
+                    onClick={startRecording}
+                    disabled={recordState === "requesting"}
+                    className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ border: "1.5px solid #E5E5E8", color: "#374151", fontSize: "0.8125rem", fontWeight: 500 }}
+                  >
+                    <Video size={14} />
+                    {recordState === "ready" ? "Record again" : "Record Video"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fileRef.current?.click()}
+                    className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors"
+                    style={{ border: "1.5px solid #E5E5E8", color: "#374151", fontSize: "0.8125rem", fontWeight: 500 }}
+                  >
+                    <Upload size={14} />
+                    Upload Video
+                  </button>
                 </div>
-              )}
-            </div>
-            <div className="grid grid-cols-2 gap-2 mt-2">
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors"
-                style={{ border: "1.5px solid #E5E5E8", color: "#374151", fontSize: "0.8125rem", fontWeight: 500 }}
-              >
-                <Video size={14} />
-                Record Video
-              </button>
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors"
-                style={{ border: "1.5px solid #E5E5E8", color: "#374151", fontSize: "0.8125rem", fontWeight: 500 }}
-              >
-                <Upload size={14} />
-                Upload Video
-              </button>
-            </div>
+              </>
+            )}
           </FieldGroup>
 
           {/* Terms checkbox */}
@@ -284,6 +515,17 @@ export function AssessVideo() {
               </span>
             </span>
           </label>
+
+          {/* Error banner — appears on failed analysis; selections are kept */}
+          {error && (
+            <div
+              className="rounded-xl px-4 py-3 flex items-start gap-2.5"
+              style={{ backgroundColor: "#FEF2F2", border: "1px solid #FECACA" }}
+            >
+              <AlertTriangle size={15} style={{ color: "#DC2626", flexShrink: 0, marginTop: "1px" }} />
+              <p style={{ color: "#B91C1C", fontSize: "0.8rem", lineHeight: 1.5 }}>{error}</p>
+            </div>
+          )}
 
           {/* Submit */}
           <button

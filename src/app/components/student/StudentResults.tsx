@@ -1,12 +1,17 @@
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useLocation } from "react-router";
 import { ArrowLeft } from "lucide-react";
-import { studentAssessments } from "../../data";
+import { studentAssessments, type Assessment } from "../../data";
 import { ResultsView } from "../shared/ResultsView";
 
 export function StudentResults() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const assessment = studentAssessments.find((a) => a.id === id) ?? studentAssessments[0];
+  const location = useLocation();
+  // A real, freshly-analyzed result is passed via navigation state. Fall back to
+  // the sample assessments for the existing demo routes (e.g. /results/a1).
+  const liveAssessment = (location.state as { assessment?: Assessment } | null)?.assessment;
+  const assessment =
+    liveAssessment ?? studentAssessments.find((a) => a.id === id) ?? studentAssessments[0];
 
   return (
     <div className="flex flex-col gap-5">
